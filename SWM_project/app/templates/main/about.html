@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}About EcoLoop — Sustainable E-Waste Management{% endblock %}
+{% block meta_description %}Learn about EcoLoop, an AI-assisted e-waste evaluation and circular recovery platform.{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <!-- Hero / Mission -->
+      <div class="text-center mb-5">
+        <span class="eco-pill eco-pill--green mb-3 d-inline-block">About the Project</span>
+        <h1 class="display-5 fw-bold mb-3">Empowering Responsible Electronics Recovery</h1>
+        <p class="lead text-muted">
+          EcoLoop is an end-to-end circular platform engineered to combat e-waste through AI category detection, 
+          deterministic recovery decision-making, and verified environmental education.
+        </p>
+      </div>
+
+      <!-- Overview Cards -->
+      <div class="row g-4 mb-5">
+        <div class="col-md-4">
+          <div class="eco-card p-4 h-100 text-center">
+            <div class="eco-classifier-icon mx-auto mb-3">
+              <i class="bi bi-cpu-fill text-success fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">AI-Assisted Vision</h5>
+            <p class="small text-muted mb-0">
+              Deep learning classifier powered by MobileNetV2 for automated device identification, with resilient manual fallback.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="eco-card p-4 h-100 text-center">
+            <div class="eco-classifier-icon mx-auto mb-3">
+              <i class="bi bi-diagram-3-fill text-primary fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Deterministic Engine</h5>
+            <p class="small text-muted mb-0">
+              Multi-tier rule engine assessing repair economics, physical condition, and critical safety hazards like battery swelling.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="eco-card p-4 h-100 text-center">
+            <div class="eco-classifier-icon mx-auto mb-3">
+              <i class="bi bi-leaf-fill text-success fs-3"></i>
+            </div>
+            <h5 class="fw-bold mb-2">EcoImpact Knowledge</h5>
+            <p class="small text-muted mb-0">
+              Authoritative, peer-reviewed knowledge repository citing EPA, UNEP, and Basel Action Network on environmental hazards.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Core Pathways -->
+      <div class="eco-card p-4 p-md-5 mb-5">
+        <h3 class="h4 fw-bold mb-4">The 5 Circular Recovery Pathways</h3>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3">
+              <span class="badge bg-success-subtle text-success p-2 rounded-3"><i class="bi bi-arrow-repeat fs-5"></i></span>
+              <div>
+                <h6 class="fw-bold mb-1">1. Direct Reuse & Resale</h6>
+                <p class="small text-muted">Functional electronics in good condition are kept in circulation, avoiding new resource extraction.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3">
+              <span class="badge bg-primary-subtle text-primary p-2 rounded-3"><i class="bi bi-tools fs-5"></i></span>
+              <div>
+                <h6 class="fw-bold mb-1">2. Repair & Restoration</h6>
+                <p class="small text-muted">Devices with minor defects where repair costs do not exceed economic feasibility thresholds.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3">
+              <span class="badge bg-info-subtle text-info p-2 rounded-3"><i class="bi bi-magic fs-5"></i></span>
+              <div>
+                <h6 class="fw-bold mb-1">3. Refurbishment</h6>
+                <p class="small text-muted">Complete hardware overhauls, testing, and component cleaning for commercial secondary markets.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex align-items-start gap-3">
+              <span class="badge bg-warning-subtle text-warning p-2 rounded-3"><i class="bi bi-puzzle fs-5"></i></span>
+              <div>
+                <h6 class="fw-bold mb-1">4. Parts Recovery / Harvesting</h6>
+                <p class="small text-muted">Extracting viable displays, RAM, power ICs, and casing from irreparable devices to fix others.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="d-flex align-items-start gap-3">
+              <span class="badge bg-secondary-subtle text-secondary p-2 rounded-3"><i class="bi bi-recycle fs-5"></i></span>
+              <div>
+                <h6 class="fw-bold mb-1">5. Certified Material Recycling</h6>
+                <p class="small text-muted">Safe extraction of precious metals and proper neutralizing of toxic substances through licensed e-waste processors.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Note -->
+      <div class="alert alert-light border p-4 text-center">
+        <i class="bi bi-mortarboard-fill text-muted fs-4 mb-2 d-block"></i>
+        <h6 class="fw-semibold mb-1">Academic & Environmental Prototype</h6>
+        <p class="small text-muted mb-0">
+          Developed as part of the Solid Waste Management (SWM) curriculum to demonstrate how automated workflows and AI
+          can support circular economic transitions and reduce municipal electronic waste.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

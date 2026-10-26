@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Log In — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+      <div class="eco-auth-card">
+        <div class="eco-auth-header">
+          <div class="eco-auth-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+          <h1 class="h3">Welcome Back</h1>
+          <p class="text-muted">Log in to your EcoLoop account.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate id="loginForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label for="email" class="form-label fw-500">Email Address</label>
+            <input type="email" class="form-control eco-input" id="email" name="email"
+                   value="{{ email }}" required placeholder="you@example.com" autocomplete="email">
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label fw-500">Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control eco-input" id="password" name="password"
+                     required placeholder="Your password" autocomplete="current-password">
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-4 d-flex align-items-center">
+            <div class="form-check me-auto">
+              <input class="form-check-input" type="checkbox" id="remember" name="remember">
+              <label class="form-check-label" for="remember">Remember me</label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-eco-primary w-100 btn-lg">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Log In
+          </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+          <p class="mb-0">Don't have an account?
+            <a href="{{ url_for('auth.register') }}" class="eco-link fw-500">Create one free</a>
+          </p>
+        </div>
+
+        <div class="mt-4 p-3 bg-light rounded-3 border small">
+          <div class="fw-bold text-dark mb-1"><i class="bi bi-key-fill text-success me-1"></i>Demo Credentials (Click to prefill):</div>
+          <div class="d-flex justify-content-between align-items-center text-muted x-small py-1 border-bottom">
+            <span><strong>Seller:</strong> seller@ecoloop.local</span>
+            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="document.getElementById('email').value='seller@ecoloop.local';document.getElementById('password').value='SellerPass123!';">Fill</button>
+          </div>
+          <div class="d-flex justify-content-between align-items-center text-muted x-small pt-1">
+            <span><strong>Admin:</strong> admin@ecoloop.local</span>
+            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="document.getElementById('email').value='admin@ecoloop.local';document.getElementById('password').value='AdminPass123!';">Fill</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+  const inp = document.getElementById('password');
+  const icon = document.getElementById('togglePasswordIcon');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  icon.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+});
+</script>
+{% endblock %}

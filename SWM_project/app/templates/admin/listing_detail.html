@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Review Listing #{{ listing.id }} — Admin — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <a href="{{ url_for('admin.listings') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Queue
+      </a>
+      <h1 class="h3 fw-bold mb-0">Moderation: Listing #{{ listing.id }}</h1>
+    </div>
+    <span class="badge {% if listing.status == 'available' %}bg-success{% elif listing.status == 'pending_review' %}bg-warning text-dark{% elif listing.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+      Status: {{ listing.status|title }}
+    </span>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Item & Assessment Details -->
+    <div class="col-lg-7">
+      <!-- Main Listing Card -->
+      <div class="eco-card p-4 mb-4">
+        <div class="row g-3">
+          <div class="col-md-5">
+            {% if listing.image_path %}
+            <img src="{{ url_for('static', filename='uploads/' + listing.image_path) }}"
+                 class="img-fluid rounded-3 border w-100 object-fit-cover"
+                 style="max-height: 240px;"
+                 alt="{{ listing.title }}"
+                 onerror="this.src='https://placehold.co/400x300?text=No+Image';">
+            {% else %}
+            <div class="bg-light rounded-3 border d-flex align-items-center justify-content-center p-4 text-muted" style="height: 200px;">
+              <i class="bi bi-image display-4"></i>
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-md-7">
+            <h4 class="fw-bold mb-1">{{ listing.title }}</h4>
+            <p class="text-muted small mb-2">Category: <span class="fw-semibold text-dark text-capitalize">{{ listing.category_confirmed }}</span></p>
+            <p class="text-muted small mb-2">Brand / Model: <span class="fw-semibold text-dark">{{ listing.brand_model or 'Not specified' }}</span></p>
+            <p class="text-muted small mb-2">Seller: <span class="fw-semibold text-dark">{{ listing.seller.name }} ({{ listing.seller.email }})</span></p>
+            <p class="text-muted small mb-3">Price: <span class="fw-bold text-success">${{ '%.2f'|format(listing.asking_price or listing.estimated_resale_value or 0) }}</span></p>
+            <p class="small text-secondary mb-0">{{ listing.additional_notes or listing.defects or 'No additional notes provided.' }}</p>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Physical Condition & Reported Attributes -->
+        <h5 class="h6 fw-bold mb-3">Reported Condition & Physical State</h5>
+        <div class="row g-2 small">
+          <div class="col-6 col-md-4">
+            <span class="text-muted d-block">Working Status:</span>
+            <span class="fw-semibold text-capitalize">{{ listing.working_status|replace('_', ' ') if listing.working_status else 'Unknown' }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <span class="text-muted d-block">Physical Condition:</span>
+            <span class="fw-semibold text-capitalize">{{ listing.physical_condition or 'Unknown' }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <span class="text-muted d-block">Age (approx):</span>
+            <span class="fw-semibold">{% if listing.age_years is not none %}~{{ listing.age_years|int }} yrs{% else %}Unknown{% endif %}</span>
+          </div>
+          <div class="col-12 mt-2">
+            <span class="text-muted d-block">Reported Defects / Issues:</span>
+            <span class="fw-semibold text-dark">{{ listing.defects or 'None reported' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Assessment Card -->
+      {% if listing.image_assessment %}
+      <div class="eco-card p-4 mb-4">
+        <h5 class="h6 fw-bold mb-3">AI Vision Assessment (MobileNetV2)</h5>
+        <div class="p-3 bg-light rounded-3 border mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small d-block">Predicted Category:</span>
+              <span class="fw-bold text-dark text-capitalize">{{ listing.image_assessment.predicted_category|replace('_', ' ') }}</span>
+            </div>
+            <div class="text-end">
+              <span class="text-muted small d-block">Confidence:</span>
+              <span class="badge bg-primary fs-6">{{ '%.1f'|format(listing.image_assessment.confidence * 100) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recovery Recommendation Card -->
+      {% if listing.recommendation %}
+      <div class="eco-card p-4">
+        <h5 class="h6 fw-bold mb-3">Rule-Based Recovery Recommendation</h5>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="badge-route badge-route-{{ listing.recommendation.route }} fs-6">
+            {{ listing.recommendation.route|replace('_', ' ')|title }}
+          </span>
+          {% if listing.recommendation.safety_flag %}
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+            <i class="bi bi-shield-fill-exclamation me-1"></i> Safety Flag Triggered
+          </span>
+          {% endif %}
+        </div>
+        <p class="small text-muted mb-3">{{ listing.recommendation.explanation }}</p>
+
+        {% if listing.recommendation.handling_precautions %}
+        <div class="alert alert-warning small mb-0">
+          <strong>Handling Precautions:</strong> {{ listing.recommendation.handling_precautions }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column: Status Change & Audit Log -->
+    <div class="col-lg-5">
+      <!-- Status Update Form -->
+      <div class="eco-card p-4 mb-4">
+        <h5 class="fw-bold mb-3">Update Listing Status</h5>
+
+        {% if listing.recommendation and listing.recommendation.safety_flag %}
+        <div class="safety-warning-banner small mb-3">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <strong>Safety Lock:</strong> This item has been flagged for physical hazards (swelling, sparks, or leaks).
+          Per policy, it cannot be approved for general marketplace resale ('available') without specialized clearance.
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('admin.update_listing_status', listing_id=listing.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">New Status</label>
+            <select name="new_status" class="form-select" required>
+              {% for st in valid_statuses %}
+              <option value="{{ st }}" {% if listing.status == st %}selected{% endif %}>
+                {{ st|replace('_', ' ')|title }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">Moderator Note / Reason</label>
+            <textarea name="note" class="form-control" rows="3" placeholder="Provide context for this transition (recorded in audit history)..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-eco-primary w-100">
+            Apply Status Update
+          </button>
+        </form>
+      </div>
+
+      <!-- Audit History -->
+      <div class="eco-card p-4">
+        <h5 class="fw-bold mb-3">Status Audit Trail</h5>
+        {% if history %}
+        <ul class="list-unstyled mb-0">
+          {% for h in history %}
+          <li class="border-bottom pb-2 mb-2">
+            <div class="d-flex justify-content-between small text-muted">
+              <span>{{ h.changed_at.strftime('%Y-%m-%d %H:%M') if h.changed_at else '' }}</span>
+              <span>By: {{ h.changer.name if h.changer else 'System' }}</span>
+            </div>
+            <div class="my-1">
+              <span class="badge bg-light text-muted border">{{ h.old_status or 'Created' }}</span>
+              <i class="bi bi-arrow-right mx-1 small text-muted"></i>
+              <span class="badge bg-success-subtle text-success">{{ h.new_status }}</span>
+            </div>
+            {% if h.note %}
+            <p class="small text-secondary mb-0 fst-italic">"{{ h.note }}"</p>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">No prior status transitions for this item.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

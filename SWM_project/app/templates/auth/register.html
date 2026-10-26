@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Register — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="eco-auth-card">
+        <div class="eco-auth-header">
+          <div class="eco-auth-icon"><i class="bi bi-person-plus"></i></div>
+          <h1 class="h3">Create Your Account</h1>
+          <p class="text-muted">Join EcoLoop and start responsibly managing your electronics.</p>
+        </div>
+
+        {% if errors %}
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          <ul class="mb-0 ps-3">
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate id="registerForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label for="name" class="form-label fw-500">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control eco-input" id="name" name="name"
+                   value="{{ form_data.get('name','') }}" required
+                   placeholder="Your full name" autocomplete="name">
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label fw-500">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control eco-input" id="email" name="email"
+                   value="{{ form_data.get('email','') }}" required
+                   placeholder="you@example.com" autocomplete="email">
+          </div>
+
+          <div class="mb-3">
+            <label for="role" class="form-label fw-500">Account Type <span class="text-danger">*</span></label>
+            <select class="form-select eco-input" id="role" name="role" required>
+              {% for r in allowed_roles %}
+              <option value="{{ r }}" {% if form_data.get('role', 'seller') == r %}selected{% endif %}>
+                {{ r.replace('_', ' ').title() }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Choose Seller to list items, Buyer to browse, or Recovery Partner to offer services.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="contact" class="form-label fw-500">Contact Information <span class="text-muted small">(Optional)</span></label>
+            <input type="text" class="form-control eco-input" id="contact" name="contact"
+                   value="{{ form_data.get('contact','') }}"
+                   placeholder="Phone or preferred contact method">
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label fw-500">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" class="form-control eco-input" id="password" name="password"
+                     required minlength="8" placeholder="At least 8 characters" autocomplete="new-password">
+              <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label fw-500">Confirm Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" class="form-control eco-input" id="confirm_password" name="confirm_password"
+                     required placeholder="Repeat password" autocomplete="new-password">
+              <button class="btn btn-outline-secondary" type="button" id="toggleConfirm">
+                <i class="bi bi-eye" id="toggleConfirmIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-eco-primary w-100 btn-lg" id="registerBtn">
+            <i class="bi bi-person-check me-2"></i>Create Account
+          </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+          <p class="mb-0">Already have an account?
+            <a href="{{ url_for('auth.login') }}" class="eco-link fw-500">Log In</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePw(btnId, iconId, inputId) {
+  document.getElementById(btnId).addEventListener('click', function() {
+    const inp = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    icon.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+  });
+}
+togglePw('togglePassword', 'togglePasswordIcon', 'password');
+togglePw('toggleConfirm', 'toggleConfirmIcon', 'confirm_password');
+</script>
+{% endblock %}

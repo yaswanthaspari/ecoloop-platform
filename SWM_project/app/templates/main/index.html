@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}EcoLoop — Give Electronics a Better Next Life{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="eco-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="eco-hero-badge mb-3">
+          <i class="bi bi-recycle me-2"></i>AI-Powered E-Waste Recovery
+        </div>
+        <h1 class="eco-hero-title">
+          Give Electronics a<br>
+          <span class="eco-gradient-text">Better Next Life.</span>
+        </h1>
+        <p class="eco-hero-subtitle">
+          EcoLoop helps you understand what to do with unwanted electronic items —
+          reuse, repair, refurbish, recover parts or recycle responsibly.
+          AI-assisted category prediction, rule-based recovery decisions
+          and science-backed environmental guidance.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          {% if current_user.is_authenticated %}
+          <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary btn-lg">
+            <i class="bi bi-plus-circle me-2"></i>List an Item
+          </a>
+          {% else %}
+          <a href="{{ url_for('auth.register') }}" class="btn btn-eco-primary btn-lg">
+            <i class="bi bi-arrow-right-circle me-2"></i>Get Started Free
+          </a>
+          {% endif %}
+          <a href="{{ url_for('marketplace.index') }}" class="btn btn-eco-outline btn-lg">
+            <i class="bi bi-shop me-2"></i>Explore Marketplace
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="eco-hero-visual">
+          <div class="eco-hero-cards">
+            <div class="eco-hero-card eco-hero-card--ai">
+              <div class="eco-hero-card-icon"><i class="bi bi-cpu"></i></div>
+              <div>
+                <div class="fw-600 small">AI Classification</div>
+                <div class="text-muted x-small">Category predicted</div>
+              </div>
+              <span class="eco-pill eco-pill--green ms-auto">Active</span>
+            </div>
+            <div class="eco-hero-card eco-hero-card--recovery">
+              <div class="eco-hero-card-icon eco-hero-card-icon--amber"><i class="bi bi-tools"></i></div>
+              <div>
+                <div class="fw-600 small">Recovery Route</div>
+                <div class="text-muted x-small">Reuse / Repair / Recycle</div>
+              </div>
+              <span class="eco-pill eco-pill--amber ms-auto">Rule-based</span>
+            </div>
+            <div class="eco-hero-card eco-hero-card--eco">
+              <div class="eco-hero-card-icon eco-hero-card-icon--teal"><i class="bi bi-leaf"></i></div>
+              <div>
+                <div class="fw-600 small">EcoImpact</div>
+                <div class="text-muted x-small">Environmental guidance</div>
+              </div>
+              <span class="eco-pill eco-pill--teal ms-auto">Sourced</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ HOW IT WORKS ══════════════ -->
+<section class="eco-section eco-section--light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="eco-section-title">How EcoLoop Works</h2>
+      <p class="eco-section-subtitle">Three intelligent stages guide every item to its best next route.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="eco-step-card">
+          <div class="eco-step-number">01</div>
+          <div class="eco-step-icon"><i class="bi bi-camera"></i></div>
+          <h3>Upload &amp; Identify</h3>
+          <p>Upload a photo of your electronic item. Our AI model suggests a category — you confirm or correct it.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="eco-step-card">
+          <div class="eco-step-number">02</div>
+          <div class="eco-step-icon eco-step-icon--amber"><i class="bi bi-diagram-3"></i></div>
+          <h3>Evaluate &amp; Decide</h3>
+          <p>Enter condition details. Our rule-based engine recommends the most appropriate recovery route with clear reasons.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="eco-step-card">
+          <div class="eco-step-number">03</div>
+          <div class="eco-step-icon eco-step-icon--teal"><i class="bi bi-leaf"></i></div>
+          <h3>Understand &amp; Act</h3>
+          <p>EcoImpact explains potential environmental effects and connects your item with buyers or recovery partners.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ RECOVERY ROUTES ══════════════ -->
+<section class="eco-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="eco-section-title">Recovery Routes</h2>
+      <p class="eco-section-subtitle">Every item is evaluated for the most responsible option.</p>
+    </div>
+    <div class="row g-3">
+      {% set routes = [
+        ('bi-arrow-repeat', 'Reuse / Resale', 'Working items find new owners through the EcoLoop marketplace.', 'eco-route--green'),
+        ('bi-tools', 'Repair', 'Repairable items are matched with qualified technicians.', 'eco-route--amber'),
+        ('bi-wrench-adjustable', 'Refurbish', 'Items suitable for deeper restoration go to refurbishment partners.', 'eco-route--blue'),
+        ('bi-puzzle', 'Parts Recovery', 'Non-repairable items may yield valuable reusable components.', 'eco-route--purple'),
+        ('bi-recycle', 'Recycle', 'When reuse is not possible, approved e-waste recycling is recommended.', 'eco-route--teal'),
+      ] %}
+      {% for icon, title, desc, cls in routes %}
+      <div class="col-lg col-md-4 col-6">
+        <div class="eco-route-card {{ cls }}">
+          <i class="bi {{ icon }} eco-route-icon"></i>
+          <h5 class="eco-route-title">{{ title }}</h5>
+          <p class="eco-route-desc small">{{ desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FEATURE CARDS ══════════════ -->
+<section class="eco-section eco-section--light">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="eco-feature-card">
+          <div class="eco-feature-icon"><i class="bi bi-cpu-fill"></i></div>
+          <h3>AI Image Classification</h3>
+          <p>MobileNetV2-based classifier suggests an item category from your photo.
+             Confidence is shown clearly — low confidence triggers manual selection, never a fabricated result.</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="eco-feature-card">
+          <div class="eco-feature-icon eco-feature-icon--amber"><i class="bi bi-diagram-3-fill"></i></div>
+          <h3>Rule-Based Recovery Engine</h3>
+          <p>Deterministic rules evaluate working condition, defects, repair economics and safety flags.
+             Safety overrides always take precedence. Every recommendation includes readable reason codes.</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="eco-feature-card">
+          <div class="eco-feature-icon eco-feature-icon--teal"><i class="bi bi-leaf-fill"></i></div>
+          <h3>EcoImpact Awareness</h3>
+          <p>Sourced environmental knowledge explains potential consequences of improper disposal
+             and benefits of responsible recovery. No invented figures — only reviewed information with citations.</p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="eco-feature-card">
+          <div class="eco-feature-icon eco-feature-icon--purple"><i class="bi bi-shop-window"></i></div>
+          <h3>Marketplace &amp; Partners</h3>
+          <p>Browse available items, express interest, and connect with approved recovery partners.
+             All transactions are clearly labelled as simulated for this prototype.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ENVIRONMENTAL AWARENESS ══════════════ -->
+<section class="eco-section eco-awareness-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <h2 class="eco-section-title">Why Responsible E-Waste Matters</h2>
+        <p>Electronic waste can contain hazardous materials that may cause environmental harm when disposed of improperly.
+           Responsible recovery extends product life and can reduce the demand for new resource extraction.</p>
+        <ul class="eco-awareness-list">
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Reuse keeps working items productive</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Repair can extend useful life significantly</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Recycling may recover valuable materials</li>
+          <li><i class="bi bi-check-circle-fill text-success me-2"></i>Approved collection prevents hazardous exposure</li>
+        </ul>
+        <a href="{{ url_for('ecoimpact.index') }}" class="btn btn-eco-primary mt-3">
+          <i class="bi bi-leaf me-2"></i>Explore EcoImpact
+        </a>
+      </div>
+      <div class="col-lg-7">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="eco-stat-card">
+              <div class="eco-stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+              <div class="eco-stat-label">E-waste often contains hazardous materials</div>
+              <div class="eco-stat-note small text-muted">Source: EU WEEE Directive guidance</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="eco-stat-card eco-stat-card--green">
+              <div class="eco-stat-icon"><i class="bi bi-recycle"></i></div>
+              <div class="eco-stat-label">Recycling can recover metals, plastics and glass</div>
+              <div class="eco-stat-note small text-muted">Source: EPA electronics recycling overview</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="eco-stat-card eco-stat-card--amber">
+              <div class="eco-stat-icon"><i class="bi bi-tools"></i></div>
+              <div class="eco-stat-label">Repair may significantly extend device life</div>
+              <div class="eco-stat-note small text-muted">Source: Right to Repair guidance</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="eco-stat-card eco-stat-card--teal">
+              <div class="eco-stat-icon"><i class="bi bi-shield-check"></i></div>
+              <div class="eco-stat-label">Approved collection protects against hazardous exposure</div>
+              <div class="eco-stat-note small text-muted">Source: WHO environmental health notes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ RECENT LISTINGS ══════════════ -->
+<section class="eco-section">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="eco-section-title mb-1">Recently Listed</h2>
+        <p class="text-muted mb-0">Browse items currently available on the marketplace.</p>
+      </div>
+      <a href="{{ url_for('marketplace.index') }}" class="btn btn-eco-outline">
+        View All <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+
+    {% if recent_listings %}
+    <div class="row g-4">
+      {% for listing in recent_listings %}
+      <div class="col-lg-4 col-md-6">
+        <div class="eco-listing-card">
+          <div class="eco-listing-img-wrap">
+            {% if listing.image_path %}
+            <img src="{{ url_for('static', filename='uploads/' + listing.image_path) }}"
+                 alt="{{ listing.title }}" class="eco-listing-img"
+                 onerror="this.src='{{ url_for('static', filename='images/placeholder.svg') }}'">
+            {% else %}
+            <div class="eco-listing-img-placeholder"><i class="bi bi-device-hdd"></i></div>
+            {% endif %}
+            <div class="eco-listing-badge">
+              {% if listing.recommendation %}
+              <span class="eco-route-badge eco-route-badge--{{ listing.recommendation.route }}">
+                {{ listing.recommendation.route.replace('_',' ').title() }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="eco-listing-body">
+            <div class="eco-listing-category small text-muted mb-1">{{ listing.category_confirmed }}</div>
+            <h5 class="eco-listing-title">{{ listing.title }}</h5>
+            <div class="d-flex align-items-center justify-content-between mt-2">
+              <div class="eco-listing-status">
+                <span class="eco-status-dot eco-status-dot--{{ listing.working_status }}"></span>
+                {{ listing.working_status.replace('_',' ').title() }}
+              </div>
+              <div class="eco-listing-price fw-600">
+                {% if listing.asking_price is not none %}
+                  ₹{{ "%.0f"|format(listing.asking_price) }}
+                {% else %}
+                  <span class="text-muted small">Price TBD</span>
+                {% endif %}
+              </div>
+            </div>
+            <a href="{{ url_for('listings.detail', listing_id=listing.id) }}"
+               class="btn btn-eco-outline btn-sm w-100 mt-3">
+              View Details <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="eco-empty-state">
+      <i class="bi bi-inbox eco-empty-icon"></i>
+      <h4>No listings yet</h4>
+      <p class="text-muted">Be the first to list an item on EcoLoop.</p>
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary">
+        <i class="bi bi-plus-circle me-2"></i>List an Item
+      </a>
+      {% else %}
+      <a href="{{ url_for('auth.register') }}" class="btn btn-eco-primary">Get Started</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ══════════════ CTA STRIP ══════════════ -->
+<section class="eco-cta-strip">
+  <div class="container text-center">
+    <h2>Ready to give your electronics a better next life?</h2>
+    <p class="mb-4">Join EcoLoop and start making responsible choices for your unwanted devices.</p>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('listings.new_listing') }}" class="btn btn-light btn-lg text-success fw-600">
+      <i class="bi bi-plus-circle me-2"></i>List an Item Now
+    </a>
+    {% else %}
+    <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg text-success fw-600">
+      <i class="bi bi-person-plus me-2"></i>Create Free Account
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

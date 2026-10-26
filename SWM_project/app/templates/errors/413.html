@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}File Too Large (413) — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center my-auto">
+  <div class="py-5">
+    <div class="display-1 fw-800 text-info mb-2">413</div>
+    <h1 class="h3 fw-bold mb-3">File Size Exceeded</h1>
+    <p class="text-muted mx-auto mb-4" style="max-width: 480px;">
+      The image you uploaded exceeds the maximum allowed upload limit (10MB). Please resize or compress your image and try again.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+      <a href="javascript:history.back()" class="btn btn-eco-primary">
+        <i class="bi bi-arrow-left me-1"></i> Go Back & Try Again
+      </a>
+      <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-house me-1"></i> Return Home
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

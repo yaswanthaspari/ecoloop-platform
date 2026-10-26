@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="eco-auth-card">
+        <div class="d-flex align-items-center mb-4">
+          <a href="{{ url_for('profile.view') }}" class="btn btn-outline-light text-dark btn-sm me-3 border">
+            <i class="bi bi-arrow-left"></i>
+          </a>
+          <h2 class="h4 fw-bold mb-0">Edit Profile</h2>
+        </div>
+
+        <form method="POST" action="{{ url_for('profile.edit') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Address</label>
+            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+            <div class="form-text small">Email cannot be changed directly in the college prototype.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Phone / Contact Details</label>
+            <input type="text" name="contact" class="form-control" value="{{ user.contact or '' }}" placeholder="Phone or preferred contact channel">
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{{ url_for('profile.view') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-eco-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

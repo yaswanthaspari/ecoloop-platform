@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+venv312/
+SWM_project/venv/
+SWM_project/venv312/
+.pytest_cache/
+SWM_project/.pytest_cache/
+
+# Environment and sensitive files
+.env
+instance/ecoloop.db
+
+# Heavy local presentation assets & binaries
+presentation_assets/
+extracted_slide_assets/
+cloudflared.exe
+
+# Vercel
+.vercel

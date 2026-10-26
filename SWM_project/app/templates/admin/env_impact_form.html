@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{% if record %}Edit Knowledge Record #{{ record.id }}{% else %}New Environmental Record{% endif %} — Admin — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="eco-card p-4">
+        <div class="d-flex align-items-center mb-4">
+          <a href="{{ url_for('admin.env_impacts') }}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+          </a>
+          <div>
+            <h1 class="h4 fw-bold mb-0">
+              {% if record %}Edit Knowledge Record #{{ record.id }}{% else %}Create Environmental Knowledge Record{% endif %}
+            </h1>
+            <small class="text-muted">Ensure all guidance is factual, educational, and cites reliable safety documentation.</small>
+          </div>
+        </div>
+
+        {% if errors %}
+        <div class="alert alert-danger">
+          <ul class="mb-0 ps-3">
+            {% for err in errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <form method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Device Category <span class="text-danger">*</span></label>
+              <select name="category" class="form-select" required>
+                <option value="">Select Category...</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}"
+                  {% if (form_data.get('category') or (record.category if record else '')) == cat %}selected{% endif %}>
+                  {{ cat|replace('_', ' ')|title }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Hazard / Material Type</label>
+              <input type="text" name="hazard_type" class="form-control"
+                     value="{{ form_data.get('hazard_type') or (record.hazard_type if record else '') }}"
+                     placeholder="e.g. Lithium-Ion Battery, Mercury Vapor, Lead Solder">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Improper Disposal Effect <span class="text-danger">*</span></label>
+            <textarea name="improper_disposal_effect" class="form-control" rows="3" required
+                      placeholder="What happens if thrown in household trash or incinerated?">{{ form_data.get('improper_disposal_effect') or (record.improper_disposal_effect if record else '') }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Long-Term Environmental Consequence</label>
+            <textarea name="environmental_consequence" class="form-control" rows="3"
+                      placeholder="Groundwater leaching, bioaccumulation, air toxicity, soil damage...">{{ form_data.get('environmental_consequence') or (record.environmental_consequence if record else '') }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Recommended Safe Handling Action <span class="text-danger">*</span></label>
+            <textarea name="recommended_action" class="form-control" rows="3" required
+                      placeholder="Specific steps residents and handlers should take...">{{ form_data.get('recommended_action') or (record.recommended_action if record else '') }}</textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Source Title</label>
+              <input type="text" name="source_title" class="form-control"
+                     value="{{ form_data.get('source_title') or (record.source_title if record else '') }}"
+                     placeholder="e.g. EPA E-Waste Factsheet">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Source Organization</label>
+              <input type="text" name="source_organization" class="form-control"
+                     value="{{ form_data.get('source_organization') or (record.source_organization if record else '') }}"
+                     placeholder="e.g. EPA, Basel Action Network">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Source URL</label>
+              <input type="url" name="source_url" class="form-control"
+                     value="{{ form_data.get('source_url') or (record.source_url if record else '') }}"
+                     placeholder="https://...">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Review Status</label>
+              <select name="review_status" class="form-select">
+                {% set cur_status = form_data.get('review_status') or (record.review_status if record else 'pending') %}
+                <option value="pending" {% if cur_status == 'pending' %}selected{% endif %}>Pending Review</option>
+                <option value="reviewed" {% if cur_status == 'reviewed' %}selected{% endif %}>Reviewed & Published</option>
+                <option value="inactive" {% if cur_status == 'inactive' %}selected{% endif %}>Inactive / Archived</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Reviewed Date</label>
+              <input type="date" name="reviewed_at" class="form-control"
+                     value="{{ form_data.get('reviewed_at') or (record.reviewed_at.strftime('%Y-%m-%d') if record and record.reviewed_at else '') }}">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{{ url_for('admin.env_impacts') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-eco-primary">
+              {% if record %}Save Changes{% else %}Create Record{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

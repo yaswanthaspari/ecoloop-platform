@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}My Profile — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+    <!-- User Overview Column -->
+    <div class="col-lg-4">
+      <div class="eco-card p-4 text-center">
+        <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2.2rem; font-weight: 700;">
+          {{ user.name[:1]|upper }}
+        </div>
+        <h3 class="h5 fw-bold mb-1">{{ user.name }}</h3>
+        <p class="text-muted small mb-2">{{ user.email }}</p>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-4 text-uppercase">
+          {{ user.role }}
+        </span>
+
+        <hr class="my-4">
+
+        <div class="text-start">
+          <div class="mb-3">
+            <span class="text-muted small d-block">Contact Info:</span>
+            <span class="fw-semibold">{{ user.contact or 'Not provided' }}</span>
+          </div>
+          <div class="mb-3">
+            <span class="text-muted small d-block">Member Since:</span>
+            <span class="fw-semibold">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Recent' }}</span>
+          </div>
+          <div>
+            <span class="text-muted small d-block">Account Status:</span>
+            <span class="badge {% if user.is_active_account %}bg-success{% else %}bg-danger{% endif %}">
+              {% if user.is_active_account %}Active{% else %}Deactivated{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <a href="{{ url_for('profile.edit') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit Profile
+          </a>
+          <a href="{{ url_for('profile.change_password') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-key me-1"></i> Change Password
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Listings Column -->
+    <div class="col-lg-8">
+      <div class="eco-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4 class="h5 fw-bold mb-0">My Recent Items</h4>
+            <small class="text-muted">Electronics you have submitted for recovery</small>
+          </div>
+          <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> List New Item
+          </a>
+        </div>
+
+        {% if listings %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Recovery Route</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in listings %}
+              <tr>
+                <td>
+                  <span class="fw-semibold d-block">{{ item.title }}</span>
+                  <small class="text-muted">{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</small>
+                </td>
+                <td class="text-capitalize">{{ item.category_confirmed|replace('_', ' ') }}</td>
+                <td>
+                  {% if item.recommendation %}
+                  <span class="badge-route badge-route-{{ item.recommendation.route }}">
+                    {{ item.recommendation.route|replace('_', ' ')|title }}
+                  </span>
+                  {% else %}
+                  <span class="text-muted small">Pending</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">{{ item.status|title }}</span>
+                </td>
+                <td>
+                  <a href="{{ url_for('listings.detail', listing_id=item.id) }}" class="btn btn-sm btn-outline-primary">
+                    View
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-box-seam display-4 text-muted mb-3"></i>
+          <p class="text-muted">You haven't listed any electronic items yet.</p>
+          <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary btn-sm mt-2">
+            List Your First Item
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

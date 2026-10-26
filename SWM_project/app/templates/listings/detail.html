@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('marketplace.index') }}">Marketplace</a></li>
+      <li class="breadcrumb-item active">{{ listing.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Image + Actions -->
+    <div class="col-lg-4">
+      <div class="eco-card mb-4">
+        <div class="eco-card-body p-0">
+          {% if listing.image_path %}
+          <img src="{{ url_for('static', filename='uploads/' + listing.image_path) }}"
+               alt="{{ listing.title }}" class="img-fluid rounded-top"
+               style="width:100%;object-fit:cover;max-height:300px"
+               onerror="this.src='{{ url_for('static', filename='images/placeholder.svg') }}'">
+          {% else %}
+          <div class="eco-listing-img-placeholder eco-listing-img-placeholder--lg">
+            <i class="bi bi-device-hdd"></i>
+          </div>
+          {% endif %}
+          <div class="p-3">
+            <span class="eco-status-badge eco-status-badge--{{ listing.status }} d-block text-center mb-2">
+              {{ listing.status.replace('_',' ').title() }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seller actions -->
+      {% if current_user.is_authenticated and listing.owned_by(current_user.id) %}
+      <div class="eco-card mb-4">
+        <div class="eco-card-header"><h6 class="mb-0">Manage Listing</h6></div>
+        <div class="eco-card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('listings.edit', listing_id=listing.id) }}"
+               class="btn btn-eco-outline btn-sm">
+              <i class="bi bi-pencil me-2"></i>Edit Listing
+            </a>
+            {% if listing.status not in ('withdrawn','completed','rejected') %}
+            <form method="POST" action="{{ url_for('listings.withdraw', listing_id=listing.id) }}"
+                  onsubmit="return confirm('Withdraw this listing?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                <i class="bi bi-x-circle me-2"></i>Withdraw
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Admin actions -->
+      {% if current_user.is_authenticated and current_user.is_admin() %}
+      <div class="eco-card">
+        <div class="eco-card-header"><h6 class="mb-0">Admin Actions</h6></div>
+        <div class="eco-card-body">
+          <a href="{{ url_for('admin.listing_detail', listing_id=listing.id) }}"
+             class="btn btn-warning btn-sm w-100">
+            <i class="bi bi-shield-check me-2"></i>Admin Review
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Main content -->
+    <div class="col-lg-8">
+      <div class="eco-card mb-4">
+        <div class="eco-card-body">
+          <div class="small text-muted mb-1">{{ listing.category_confirmed }}</div>
+          <h1 class="h3 fw-700 mb-2">{{ listing.title }}</h1>
+          {% if listing.brand_model %}
+          <div class="text-muted mb-3">{{ listing.brand_model }}</div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="eco-detail-chip">
+                <div class="small text-muted">Working</div>
+                <div class="fw-600">{{ listing.working_status.replace('_',' ').title() }}</div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="eco-detail-chip">
+                <div class="small text-muted">Condition</div>
+                <div class="fw-600">{{ listing.physical_condition.title() }}</div>
+              </div>
+            </div>
+            {% if listing.age_years is not none %}
+            <div class="col-6 col-md-3">
+              <div class="eco-detail-chip">
+                <div class="small text-muted">Age</div>
+                <div class="fw-600">~{{ listing.age_years | int }} yr{% if listing.age_years != 1 %}s{% endif %}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% if listing.asking_price is not none %}
+            <div class="col-6 col-md-3">
+              <div class="eco-detail-chip eco-detail-chip--price">
+                <div class="small text-muted">Asking Price</div>
+                <div class="fw-700 text-success">₹{{ "%.0f"|format(listing.asking_price) }}</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if listing.defects %}
+          <div class="mb-3">
+            <div class="fw-600 mb-1">Known Defects / Issues</div>
+            <p class="text-muted mb-0">{{ listing.defects }}</p>
+          </div>
+          {% endif %}
+
+          {% if listing.additional_notes %}
+          <div class="mb-3">
+            <div class="fw-600 mb-1">Additional Notes</div>
+            <p class="text-muted mb-0">{{ listing.additional_notes }}</p>
+          </div>
+          {% endif %}
+
+          <div class="text-muted small mt-3">Listed: {{ listing.created_at.strftime('%d %B %Y') if listing.created_at else 'Unknown' }}</div>
+        </div>
+      </div>
+
+      <!-- AI Assessment -->
+      {% if listing.image_assessment %}
+      <div class="eco-card mb-4">
+        <div class="eco-card-header">
+          <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>AI Classification</h5>
+        </div>
+        <div class="eco-card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="small text-muted mb-1">Predicted Category</div>
+              <div class="fw-600">{{ listing.image_assessment.predicted_category or 'Manual selection' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="small text-muted mb-1">Model Confidence</div>
+              <div class="fw-600">
+                {% if listing.image_assessment.confidence %}
+                  {{ "%.0f"|format(listing.image_assessment.confidence * 100) }}%
+                {% else %}
+                  N/A ({{ listing.image_assessment.inference_status }})
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="small text-muted mb-1">Model Version</div>
+              <div class="fw-600">{{ listing.image_assessment.model_version or 'N/A' }}</div>
+            </div>
+          </div>
+          <div class="alert alert-info mt-3 small mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Model confidence indicates confidence in the predicted category only — not item quality, safety or suitability.
+          </div>
+
+          <!-- Detected Hardware Modules -->
+          {% if listing.image_assessment.components_list %}
+          <div class="mt-3 pt-3 border-top">
+            <div class="small fw-600 text-dark mb-2">
+              <i class="bi bi-motherboard text-primary me-1"></i>Detected Hardware Components:
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              {% for comp in listing.image_assessment.components_list %}
+              <span class="badge bg-white text-dark border p-2 d-inline-flex align-items-center gap-2">
+                <i class="bi bi-{{ comp.icon or 'cpu' }} text-primary"></i>
+                <span>{{ comp.name }}</span>
+                <span class="badge bg-light text-muted border-0">{{ "%.0f"|format((comp.confidence or 0.85) * 100) }}%</span>
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Diagnostic Findings -->
+          {% if listing.image_assessment.answers_dict %}
+          <div class="mt-3 pt-3 border-top">
+            <div class="small fw-600 text-dark mb-2">
+              <i class="bi bi-patch-question-fill text-primary me-1"></i>Component Condition Diagnostics:
+            </div>
+            <div class="row g-2">
+              {% for comp_id, ans in listing.image_assessment.answers_dict.items() %}
+              <div class="col-sm-6">
+                <div class="p-2 bg-light rounded small">
+                  <span class="text-muted text-capitalize">{{ comp_id.replace('_', ' ') }}:</span>
+                  <span class="fw-600 text-capitalize ms-1">{{ ans.replace('_', ' ') }}</span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recovery Recommendation -->
+      {% if listing.recommendation %}
+      {% set rec = listing.recommendation %}
+      <div class="eco-card mb-4">
+        <div class="eco-card-header">
+          <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Recovery Recommendation</h5>
+        </div>
+        <div class="eco-card-body">
+          {% if rec.safety_flag or rec.manual_review_flag %}
+          <div class="alert alert-{% if rec.safety_flag %}danger{% else %}warning{% endif %} mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {% if rec.safety_flag %}<strong>Safety Review Required</strong>{% else %}<strong>Manual Review Required</strong>{% endif %}
+          </div>
+          {% endif %}
+
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="eco-route-icon-lg">
+              <i class="bi {{ route_icon.get(rec.route, 'bi-question') }}"></i>
+            </div>
+            <div>
+              <div class="small text-muted">Suggested Route</div>
+              <h5 class="mb-0">{{ route_display.get(rec.route, rec.route) }}</h5>
+            </div>
+            {% if rec.suitability_score is not none %}
+            <div class="ms-auto text-end">
+              <div class="eco-score-display">{{ rec.suitability_score }}</div>
+              <div class="x-small text-muted">Rule-Based Score (0–100)</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <p class="mb-3">{{ rec.explanation }}</p>
+
+          {% if rec.reason_codes %}
+          <div class="d-flex flex-wrap gap-2">
+            {% for code in rec.reason_codes | fromjson %}
+            <span class="eco-pill eco-pill--muted small">{{ code.replace('_', ' ').title() }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- EcoImpact -->
+      {% if eco %}
+      <div class="eco-card mb-4">
+        <div class="eco-card-header">
+          <h5 class="mb-0"><i class="bi bi-leaf me-2 text-success"></i>EcoImpact — Environmental Guidance</h5>
+        </div>
+        <div class="eco-card-body">
+          {% if eco.route_advice %}
+          <div class="eco-info-box eco-info-box--green mb-4">
+            <i class="bi bi-leaf me-2"></i>{{ eco.route_advice }}
+          </div>
+          {% endif %}
+
+          {% if eco.records_found %}
+            {% for impact in eco.impacts %}
+            <div class="eco-impact-card mb-3">
+              {% if impact.hazard_type %}
+              <div class="eco-impact-hazard mb-2">
+                <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                <strong>{{ impact.hazard_type }}</strong>
+              </div>
+              {% endif %}
+              {% if impact.improper_disposal_effect %}
+              <div class="mb-2">
+                <div class="small fw-600 text-danger mb-1">Potential effect of improper disposal:</div>
+                <p class="mb-0 small">{{ impact.improper_disposal_effect }}</p>
+              </div>
+              {% endif %}
+              {% if impact.environmental_consequence %}
+              <div class="mb-2">
+                <div class="small fw-600 mb-1">Environmental consequence:</div>
+                <p class="mb-0 small">{{ impact.environmental_consequence }}</p>
+              </div>
+              {% endif %}
+              {% if impact.recommended_action %}
+              <div class="mb-2">
+                <div class="small fw-600 text-success mb-1">Recommended action:</div>
+                <p class="mb-0 small">{{ impact.recommended_action }}</p>
+              </div>
+              {% endif %}
+              {% if impact.source_title or impact.source_url %}
+              <div class="eco-source-ref mt-2">
+                <i class="bi bi-link-45deg me-1"></i>
+                Source:
+                {% if impact.source_url %}
+                <a href="{{ impact.source_url }}" target="_blank" rel="noopener noreferrer" class="eco-link">
+                  {{ impact.source_title or impact.source_url }}
+                </a>
+                {% else %}
+                {{ impact.source_title }}
+                {% endif %}
+                {% if impact.source_organization %} — {{ impact.source_organization }}{% endif %}
+                {% if impact.reviewed_at %} (reviewed {{ impact.reviewed_at }}){% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="eco-empty-state py-4">
+            <i class="bi bi-journal-x eco-empty-icon text-muted"></i>
+            <p class="text-muted">{{ eco.unavailable_message }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Interest Form -->
+      {% if listing.is_public() and current_user.is_authenticated and not listing.owned_by(current_user.id) and current_user.can_express_interest() %}
+      <div class="eco-card">
+        <div class="eco-card-header">
+          <h5 class="mb-0"><i class="bi bi-hand-thumbs-up me-2"></i>Express Interest</h5>
+        </div>
+        <div class="eco-card-body">
+          {% if existing_interest %}
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-check-circle me-2"></i>
+            You have already expressed <strong>{{ existing_interest.interest_type }}</strong> interest in this listing
+            (status: {{ existing_interest.status }}).
+          </div>
+          {% else %}
+          <p class="text-muted small mb-3">
+            <strong>⚠️ Demo only:</strong> This is a college prototype. No real transactions, payments or collection are arranged through this platform.
+          </p>
+          <form method="POST" action="{{ url_for('listings.express_interest', listing_id=listing.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label for="interest_type" class="form-label fw-500">Interest Type</label>
+              <select class="form-select eco-input" id="interest_type" name="interest_type">
+                {% if current_user.role == 'buyer' %}
+                <option value="buy">Buy / Acquire</option>
+                {% endif %}
+                {% if current_user.role == 'recovery_partner' %}
+                <option value="recover">Recovery / Refurbishment</option>
+                <option value="partner">Partnership Enquiry</option>
+                {% endif %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="message" class="form-label fw-500">Message (Optional)</label>
+              <textarea class="form-control eco-input" id="message" name="message" rows="2"
+                        placeholder="Introduce yourself or ask a question about the item…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-eco-primary">
+              <i class="bi bi-send me-2"></i>Submit Interest (Simulated)
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Custom Jinja filter fallback for fromjson
+document.querySelectorAll('.reason-code-raw').forEach(el => {
+  try { JSON.parse(el.textContent); } catch(e) {}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="h2 fw-700 mb-1">My Dashboard</h1>
+      <p class="text-muted mb-0">Welcome back, {{ current_user.name.split()[0] }}.</p>
+    </div>
+    <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary">
+      <i class="bi bi-plus-circle me-2"></i>List an Item
+    </a>
+  </div>
+
+  <!-- ── Stat Cards ── -->
+  <div class="row g-3 mb-4">
+    {% set stats = [
+      ('bi-collection', counts.total, 'Total Listings', 'eco-stat-card--default'),
+      ('bi-check-circle', counts.available, 'Available', 'eco-stat-card--green'),
+      ('bi-hourglass-split', counts.pending_review, 'Pending Review', 'eco-stat-card--amber'),
+      ('bi-pencil-square', counts.draft, 'Drafts', 'eco-stat-card--blue'),
+      ('bi-trophy', counts.completed, 'Completed', 'eco-stat-card--purple'),
+    ] %}
+    {% for icon, count, label, cls in stats %}
+    <div class="col-lg col-md-4 col-6">
+      <div class="eco-stat-card {{ cls }}">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <div class="eco-stat-count">{{ count }}</div>
+            <div class="eco-stat-label">{{ label }}</div>
+          </div>
+          <i class="bi {{ icon }} eco-stat-icon-sm"></i>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Recent Listings ── -->
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="eco-card">
+        <div class="eco-card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Recent Listings</h5>
+          <a href="{{ url_for('listings.my_listings') }}" class="btn btn-sm btn-eco-outline">View All</a>
+        </div>
+        <div class="eco-card-body p-0">
+          {% if recent %}
+          <div class="table-responsive">
+            <table class="table eco-table mb-0">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Route</th>
+                  <th>Status</th>
+                  <th>Price</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for listing in recent %}
+                <tr>
+                  <td>
+                    <div class="fw-500">{{ listing.title }}</div>
+                    <div class="small text-muted">{{ listing.created_at.strftime('%d %b %Y') if listing.created_at else '' }}</div>
+                  </td>
+                  <td class="small">{{ listing.category_confirmed }}</td>
+                  <td>
+                    {% if listing.recommendation %}
+                    <span class="eco-route-badge eco-route-badge--{{ listing.recommendation.route }} small">
+                      {{ listing.recommendation.route.replace('_',' ').title() }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="eco-status-badge eco-status-badge--{{ listing.status }}">
+                      {{ listing.status.replace('_',' ').title() }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if listing.asking_price is not none %}
+                      ₹{{ "%.0f"|format(listing.asking_price) }}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td>
+                    <a href="{{ url_for('listings.detail', listing_id=listing.id) }}"
+                       class="btn btn-sm btn-eco-outline">View</a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="eco-empty-state py-5">
+            <i class="bi bi-inbox eco-empty-icon"></i>
+            <h5>No listings yet</h5>
+            <p class="text-muted">Start by listing your first electronic item.</p>
+            <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary">
+              <i class="bi bi-plus-circle me-2"></i>List an Item
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Quick Actions ── -->
+    <div class="col-lg-4">
+      <div class="eco-card mb-4">
+        <div class="eco-card-header"><h5 class="mb-0">Quick Actions</h5></div>
+        <div class="eco-card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary">
+              <i class="bi bi-plus-circle me-2"></i>New Listing
+            </a>
+            <a href="{{ url_for('listings.my_listings') }}" class="btn btn-eco-outline">
+              <i class="bi bi-collection me-2"></i>All My Listings
+            </a>
+            <a href="{{ url_for('marketplace.index') }}" class="btn btn-eco-outline">
+              <i class="bi bi-shop me-2"></i>Browse Marketplace
+            </a>
+            <a href="{{ url_for('ecoimpact.index') }}" class="btn btn-eco-outline">
+              <i class="bi bi-leaf me-2"></i>EcoImpact Guide
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="eco-card">
+        <div class="eco-card-header"><h5 class="mb-0">Account</h5></div>
+        <div class="eco-card-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="eco-avatar eco-avatar--lg">{{ current_user.name[0].upper() }}</div>
+            <div>
+              <div class="fw-600">{{ current_user.name }}</div>
+              <div class="small text-muted">{{ current_user.role.replace('_',' ').title() }}</div>
+              <div class="small text-muted">{{ current_user.email }}</div>
+            </div>
+          </div>
+          <a href="{{ url_for('profile.edit') }}" class="btn btn-sm btn-eco-outline w-100">
+            <i class="bi bi-pencil me-1"></i>Edit Profile
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

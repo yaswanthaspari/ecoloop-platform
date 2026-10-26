@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Marketplace — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <span class="eco-pill eco-pill--green mb-2 d-inline-flex align-items-center">
+        <i class="bi bi-shop me-1"></i> Circular Electronics Exchange
+      </span>
+      <h1 class="h2 fw-800 mb-1">Marketplace</h1>
+      <p class="text-muted mb-0">Browse verified electronic items listed for reuse, component salvage, refurbishment, or recycling.</p>
+    </div>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('listings.new_listing') }}" class="btn btn-eco-primary">
+      <i class="bi bi-plus-circle me-2"></i>List an Item
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Filters -->
+  <div class="eco-card mb-4">
+    <div class="eco-card-body">
+      <form method="GET" action="{{ url_for('marketplace.index') }}" id="marketplaceFilters">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-500 small">Search</label>
+            <input type="text" class="form-control eco-input" name="q"
+                   value="{{ filters.q }}" placeholder="Item title…">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Category</label>
+            <select class="form-select eco-input" name="category">
+              <option value="">All</option>
+              {% for cat in categories %}
+              <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Working Status</label>
+            <select class="form-select eco-input" name="working_status">
+              <option value="">All</option>
+              <option value="working" {% if filters.working_status == 'working' %}selected{% endif %}>Working</option>
+              <option value="partially_working" {% if filters.working_status == 'partially_working' %}selected{% endif %}>Partially Working</option>
+              <option value="not_working" {% if filters.working_status == 'not_working' %}selected{% endif %}>Not Working</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Recovery Route</label>
+            <select class="form-select eco-input" name="route">
+              <option value="">All</option>
+              {% for r in available_routes %}
+              <option value="{{ r }}" {% if filters.route == r %}selected{% endif %}>
+                {{ route_display.get(r, r) }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1">
+            <button type="submit" class="btn btn-eco-primary w-100">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div class="col-md-1">
+            <a href="{{ url_for('marketplace.index') }}" class="btn btn-eco-outline w-100" title="Clear filters">
+              <i class="bi bi-x-lg"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1 align-items-end">
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Price Min (₹)</label>
+            <input type="number" class="form-control eco-input" name="price_min"
+                   value="{{ filters.price_min }}" min="0" placeholder="0">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Price Max (₹)</label>
+            <input type="number" class="form-control eco-input" name="price_max"
+                   value="{{ filters.price_max }}" min="0" placeholder="Any">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-500 small">Sort By</label>
+            <select class="form-select eco-input" name="sort">
+              <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest First</option>
+              <option value="price_asc" {% if filters.sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
+              <option value="price_desc" {% if filters.sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if listings %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted">{{ pagination.total }} item{% if pagination.total != 1 %}s{% endif %} found</span>
+  </div>
+
+  <div class="row g-4">
+    {% for listing in listings %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="eco-listing-card">
+        <div class="eco-listing-img-wrap">
+          {% if listing.image_path %}
+          <img src="{{ url_for('static', filename='uploads/' + listing.image_path) }}"
+               alt="{{ listing.title }}" class="eco-listing-img"
+               onerror="this.src='{{ url_for('static', filename='images/placeholder.svg') }}'">
+          {% else %}
+          <div class="eco-listing-img-placeholder"><i class="bi bi-device-hdd"></i></div>
+          {% endif %}
+          {% if listing.recommendation %}
+          <div class="eco-listing-badge">
+            <span class="eco-route-badge eco-route-badge--{{ listing.recommendation.route }}">
+              {{ listing.recommendation.route.replace('_',' ').title() }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+        <div class="eco-listing-body">
+          <div class="eco-listing-category small text-muted mb-1">{{ listing.category_confirmed }}</div>
+          <h5 class="eco-listing-title">{{ listing.title }}</h5>
+          <div class="d-flex align-items-center justify-content-between mt-2">
+            <div class="small">
+              <span class="eco-status-dot eco-status-dot--{{ listing.working_status }}"></span>
+              {{ listing.working_status.replace('_',' ').title() }}
+            </div>
+            <div class="fw-600">
+              {% if listing.asking_price is not none %}₹{{ "%.0f"|format(listing.asking_price) }}
+              {% else %}<span class="text-muted small">TBD</span>{% endif %}
+            </div>
+          </div>
+          <a href="{{ url_for('listings.detail', listing_id=listing.id) }}"
+             class="btn btn-eco-outline btn-sm w-100 mt-3">View Details</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <nav class="mt-5">
+    <ul class="pagination justify-content-center eco-pagination">
+      {% if pagination.has_prev %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('marketplace.index', page=pagination.prev_num, **filters) }}">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+      </li>
+      {% endif %}
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <li class="page-item {% if p == pagination.page %}active{% endif %}">
+        <a class="page-link" href="{{ url_for('marketplace.index', page=p, **filters) }}">{{ p }}</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+      {% endfor %}
+      {% if pagination.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('marketplace.index', page=pagination.next_num, **filters) }}">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="eco-empty-state py-5">
+    <i class="bi bi-search eco-empty-icon"></i>
+    <h4>No listings found</h4>
+    <p class="text-muted">Try adjusting your filters or check back later.</p>
+    <a href="{{ url_for('marketplace.index') }}" class="btn btn-eco-outline">Clear Filters</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Access Denied (403) — EcoLoop{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center my-auto">
+  <div class="py-5">
+    <div class="display-1 fw-800 text-danger mb-2">403</div>
+    <h1 class="h3 fw-bold mb-3">Access Prohibited</h1>
+    <p class="text-muted mx-auto mb-4" style="max-width: 480px;">
+      You do not have the required permissions to access this administrative resource or perform this action.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+      <a href="{{ url_for('main.index') }}" class="btn btn-eco-primary">
+        <i class="bi bi-house me-1"></i> Return Home
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

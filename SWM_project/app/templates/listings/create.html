@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% block title %}List an Item — EcoLoop{% endblock %}
+{% block meta_description %}Upload your electronic item, get AI-assisted category prediction, a recovery recommendation and environmental guidance.{% endblock %}
+
+{% block content %}
+<div class="container py-5" id="createListingPage">
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <!-- Header -->
+      <div class="mb-4">
+        <h1 class="h2 fw-700 mb-1">List an Electronic Item</h1>
+        <p class="text-muted">Follow the steps below. All fields marked * are required.</p>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="eco-step-progress mb-5">
+        <div class="eco-step-progress-bar" id="progressBar" style="width:16.6%"></div>
+        <div class="eco-step-progress-labels">
+          {% for s in ['Upload Photo','AI Category','Item Details','Recovery Assessment','EcoImpact','Review & Publish'] %}
+          <span class="eco-step-label {% if loop.first %}active{% endif %}" id="stepLabel{{ loop.index }}">
+            <span class="eco-step-dot">{{ loop.index }}</span>
+            <span class="d-none d-md-inline">{{ s }}</span>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Server-side errors (final submission) -->
+      {% if errors %}
+      <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-circle me-2"></i><strong>Please correct the following:</strong>
+        <ul class="mb-0 mt-2 ps-3">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+
+      <!-- MAIN FORM -->
+      <form method="POST" action="{{ url_for('listings.create_listing') }}"
+            enctype="multipart/form-data" id="listingForm" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <!-- Hidden fields populated by JS -->
+        <input type="hidden" name="category_confirmed" id="hidCategoryConfirmed">
+        <input type="hidden" name="category_source"    id="hidCategorySource" value="user">
+        <input type="hidden" name="predicted_category"  id="hidPredictedCategory">
+        <input type="hidden" name="predicted_confidence" id="hidPredictedConfidence">
+        <input type="hidden" name="model_version"        id="hidModelVersion">
+        <input type="hidden" name="inference_status"     id="hidInferenceStatus" value="fallback">
+        <input type="hidden" name="safety_flags"         id="hidSafetyFlags" value="[]">
+        <input type="hidden" name="image"                id="hidImagePath">
+        <input type="hidden" name="diagnostic_answers"   id="hidDiagnosticAnswers" value="{}">
+        <input type="hidden" name="detected_components"  id="hidDetectedComponents" value="[]">
+
+        <!-- ════ STEP 1: Upload Image ════ -->
+        <div class="eco-form-step" id="step1">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-camera me-2 text-success"></i>Step 1: Upload a Photo</h4>
+            </div>
+            <div class="eco-card-body">
+              <p class="text-muted mb-4">
+                Upload a clear photo of your item. The image will be used for AI category prediction.
+                Accepted formats: JPG, PNG, WEBP (max 10 MB).
+              </p>
+
+              <!-- Drag-drop zone -->
+              <div class="eco-upload-zone" id="uploadZone">
+                <input type="file" id="imageFileInput" name="image_upload_temp"
+                       accept=".jpg,.jpeg,.png,.webp,.gif" class="eco-upload-input">
+                <div id="uploadPrompt" class="eco-upload-prompt">
+                  <i class="bi bi-cloud-upload eco-upload-icon"></i>
+                  <p class="fw-500 mb-1">Drag &amp; drop your image here</p>
+                  <p class="text-muted small mb-3">or</p>
+                  <label for="imageFileInput" class="btn btn-eco-outline">
+                    <i class="bi bi-folder2-open me-2"></i>Choose File
+                  </label>
+                </div>
+                <div id="uploadPreview" class="eco-upload-preview d-none">
+                  <img id="previewImg" src="" alt="Preview" class="eco-preview-img">
+                  <div class="eco-preview-info mt-3">
+                    <span id="previewName" class="fw-500"></span>
+                    <span id="previewSize" class="small text-muted ms-2"></span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-3" id="removeImageBtn">
+                      <i class="bi bi-x-circle me-1"></i>Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="text-danger small mt-2 d-none" id="uploadError"></div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="button" class="btn btn-eco-primary btn-lg" id="step1Next" disabled>
+              Next: AI Category <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ════ STEP 2: AI Classification ════ -->
+        <div class="eco-form-step d-none" id="step2">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-cpu me-2 text-success"></i>Step 2: Category Identification</h4>
+            </div>
+            <div class="eco-card-body">
+              <!-- Classifier status -->
+              {% if classifier_available %}
+              <div class="eco-classifier-status eco-classifier-status--available mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                AI classifier is available. Processing your image…
+              </div>
+              {% else %}
+              <div class="eco-classifier-status eco-classifier-status--fallback mb-4">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>AI classifier not configured.</strong>
+                The model file is not installed. Please select the category manually below.
+                This is expected for a new installation — see the README for model setup.
+              </div>
+              {% endif %}
+
+              <!-- Classifier result panel (shown after classification) -->
+              <div id="classifierResult" class="eco-classifier-result d-none mb-4">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="eco-classifier-icon"><i class="bi bi-cpu-fill"></i></div>
+                  <div class="flex-grow-1">
+                    <div class="fw-600 mb-1">AI Prediction</div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                      <span class="eco-pill eco-pill--green" id="resultCategory">—</span>
+                      <span class="small text-muted">Confidence:
+                        <span id="resultConfidence" class="fw-500">—</span>
+                      </span>
+                      <span class="small text-muted">Model: <span id="resultModel">—</span></span>
+                    </div>
+                    <div class="small text-muted" id="resultMessage"></div>
+                    <div class="alert alert-warning mt-2 small d-none" id="safetyAlert">
+                      <i class="bi bi-exclamation-triangle me-1"></i>
+                      This category may contain safety-sensitive components. Please review the safety questions below.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detected Hardware Components -->
+              <div id="detectedComponentsPanel" class="eco-card p-3 mb-4 bg-light border d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="fw-700 mb-0 text-dark">
+                    <i class="bi bi-motherboard text-primary me-2"></i>Automatically Detected Hardware Components
+                  </h6>
+                  <span class="badge bg-primary rounded-pill px-2 py-1" id="componentCountBadge">0 detected</span>
+                </div>
+                <p class="small text-muted mb-3">
+                  Computer vision analyzed the uploaded photo and identified the following hardware modules and visual signatures:
+                </p>
+                <div id="detectedComponentsList" class="d-flex flex-wrap gap-2 mb-2">
+                  <!-- Component badges rendered by JS -->
+                </div>
+                <div id="visualAnomaliesWrap" class="alert alert-warning py-2 px-3 small d-none mb-0">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                  <span id="visualAnomaliesText"></span>
+                </div>
+              </div>
+
+              <!-- Interactive Component Diagnostic Questions -->
+              <div id="diagnosticQuestionsPanel" class="eco-card p-3 mb-4 border border-primary border-opacity-25 bg-white d-none shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-patch-question-fill text-primary fs-5"></i>
+                    <h6 class="fw-700 mb-0 text-dark">Component Diagnostics &amp; Condition Verification</h6>
+                  </div>
+                  <span class="small text-muted" id="questionsProgressBadge">0 answered</span>
+                </div>
+                <p class="small text-muted mb-3">
+                  Based on the detected components, please verify the physical conditions below. Your answers directly determine whether this item is routed to Resale, Repair, Refurbishment, Parts Recovery, or Recycling:
+                </p>
+                <div id="diagnosticQuestionsList" class="d-flex flex-column gap-3">
+                  <!-- Interactive question cards rendered by JS -->
+                </div>
+              </div>
+
+              <!-- Loading indicator -->
+              <div id="classifierLoading" class="text-center py-4 d-none">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2 text-muted">Analysing image…</p>
+              </div>
+
+              <!-- Category selection -->
+              <div class="mb-4">
+                <label for="categorySelect" class="form-label fw-500">
+                  Confirm or Select Item Category <span class="text-danger">*</span>
+                </label>
+                <select class="form-select eco-input" id="categorySelect" name="category_select" required>
+                  <option value="">— Select a category —</option>
+                  {% for cat in categories %}
+                  <option value="{{ cat }}"
+                    {% if form_data and form_data.get('category_confirmed') == cat %}selected{% endif %}>
+                    {{ cat }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="form-text" id="categorySourceNote">
+                  {% if classifier_available %}
+                  The AI suggested a category above. Please confirm or correct it.
+                  {% else %}
+                  Please select the most appropriate category for your item.
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Safety flag checkboxes (shown for safety-sensitive categories) -->
+              <div id="safetyFlagsPanel" class="eco-safety-panel d-none mb-4">
+                <h6 class="fw-600 mb-3"><i class="bi bi-shield-exclamation text-warning me-2"></i>Safety Check</h6>
+                <p class="small text-muted mb-3">
+                  This item category may include components that require careful handling.
+                  Please indicate if any of the following apply:
+                </p>
+                <div class="row g-2">
+                  {% set safety_opts = [
+                    ('swollen_battery', 'Battery appears swollen or deformed'),
+                    ('leaking_battery', 'Visible leakage or corrosion on battery'),
+                    ('overheating', 'Item overheats or becomes very hot'),
+                    ('smoke', 'Smoke or sparks observed'),
+                    ('burning_smell', 'Burning smell when in use'),
+                    ('damaged_battery', 'Battery is cracked, punctured or damaged'),
+                    ('unknown_hazardous_component', 'Unsure whether item contains hazardous component'),
+                  ] %}
+                  {% for val, label in safety_opts %}
+                  <div class="col-md-6">
+                    <div class="form-check eco-safety-check">
+                      <input class="form-check-input safety-flag-input" type="checkbox"
+                             id="sf_{{ val }}" value="{{ val }}">
+                      <label class="form-check-label small" for="sf_{{ val }}">{{ label }}</label>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-eco-outline btn-lg" onclick="goToStep(1)">
+              <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+            <button type="button" class="btn btn-eco-primary btn-lg" id="step2Next">
+              Next: Item Details <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ════ STEP 3: Item Details ════ -->
+        <div class="eco-form-step d-none" id="step3">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-clipboard-data me-2 text-success"></i>Step 3: Item Details</h4>
+            </div>
+            <div class="eco-card-body">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label for="title" class="form-label fw-500">Item Title <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control eco-input" id="title" name="title"
+                         value="{{ form_data.get('title','') if form_data else '' }}"
+                         placeholder="e.g. Dell Latitude Laptop i5 8th Gen" required maxlength="200">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="brand_model" class="form-label fw-500">Brand / Model <span class="text-muted small">(Optional)</span></label>
+                  <input type="text" class="form-control eco-input" id="brand_model" name="brand_model"
+                         value="{{ form_data.get('brand_model','') if form_data else '' }}"
+                         placeholder="e.g. Dell Latitude E7450">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="age_years" class="form-label fw-500">Approximate Age (years) <span class="text-muted small">(Optional)</span></label>
+                  <input type="number" class="form-control eco-input" id="age_years" name="age_years"
+                         value="{{ form_data.get('age_years','') if form_data else '' }}"
+                         min="0" max="50" step="0.5" placeholder="e.g. 3">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="working_status" class="form-label fw-500">Working Status <span class="text-danger">*</span></label>
+                  <select class="form-select eco-input" id="working_status" name="working_status" required>
+                    <option value="">— Select —</option>
+                    <option value="working" {% if form_data and form_data.get('working_status')=='working' %}selected{% endif %}>Working</option>
+                    <option value="partially_working" {% if form_data and form_data.get('working_status')=='partially_working' %}selected{% endif %}>Partially Working</option>
+                    <option value="not_working" {% if form_data and form_data.get('working_status')=='not_working' %}selected{% endif %}>Not Working</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="physical_condition" class="form-label fw-500">Physical Condition <span class="text-danger">*</span></label>
+                  <select class="form-select eco-input" id="physical_condition" name="physical_condition" required>
+                    <option value="excellent" {% if form_data and form_data.get('physical_condition')=='excellent' %}selected{% endif %}>Excellent</option>
+                    <option value="good" {% if not form_data or form_data.get('physical_condition','good')=='good' %}selected{% endif %}>Good</option>
+                    <option value="fair" {% if form_data and form_data.get('physical_condition')=='fair' %}selected{% endif %}>Fair</option>
+                    <option value="poor" {% if form_data and form_data.get('physical_condition')=='poor' %}selected{% endif %}>Poor</option>
+                  </select>
+                </div>
+
+                <div class="col-12">
+                  <label for="defects" class="form-label fw-500">Known Defects or Issues <span class="text-muted small">(Optional)</span></label>
+                  <textarea class="form-control eco-input" id="defects" name="defects" rows="2"
+                            placeholder="Describe any known defects, faults or damage…">{{ form_data.get('defects','') if form_data else '' }}</textarea>
+                </div>
+
+                <!-- Repair fields — shown when not fully working -->
+                <div id="repairFields" class="col-12" style="display:{% if form_data and form_data.get('working_status') != 'working' %}block{% else %}none{% endif %}">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label for="repair_history" class="form-label fw-500">Repair History <span class="text-muted small">(Optional)</span></label>
+                      <textarea class="form-control eco-input" id="repair_history" name="repair_history" rows="2"
+                                placeholder="Any previous repair attempts or service history…">{{ form_data.get('repair_history','') if form_data else '' }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="estimated_repair_cost" class="form-label fw-500">Estimated Repair Cost (₹) <span class="text-muted small">(If known)</span></label>
+                      <input type="number" class="form-control eco-input" id="estimated_repair_cost"
+                             name="estimated_repair_cost"
+                             value="{{ form_data.get('estimated_repair_cost','') if form_data else '' }}"
+                             min="0" step="1" placeholder="e.g. 80">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="estimated_resale_value" class="form-label fw-500">Estimated Resale Value (₹) <span class="text-muted small">(If known)</span></label>
+                      <input type="number" class="form-control eco-input" id="estimated_resale_value"
+                             name="estimated_resale_value"
+                             value="{{ form_data.get('estimated_resale_value','') if form_data else '' }}"
+                             min="0" step="1" placeholder="e.g. 150">
+                      <div class="form-text">Used to assess repair economics. Leave blank if unknown — we will not invent a value.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="asking_price" class="form-label fw-500">Asking Price (₹) <span class="text-muted small">(Optional)</span></label>
+                  <input type="number" class="form-control eco-input" id="asking_price" name="asking_price"
+                         value="{{ form_data.get('asking_price','') if form_data else '' }}"
+                         min="0" step="1" placeholder="0 for free / leave blank if TBD">
+                </div>
+
+                <div class="col-12">
+                  <label for="additional_notes" class="form-label fw-500">Additional Notes <span class="text-muted small">(Optional)</span></label>
+                  <textarea class="form-control eco-input" id="additional_notes" name="additional_notes" rows="2"
+                            placeholder="Anything else relevant to this item…">{{ form_data.get('additional_notes','') if form_data else '' }}</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-eco-outline btn-lg" onclick="goToStep(2)">
+              <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+            <button type="button" class="btn btn-eco-primary btn-lg" id="step3Next">
+              Next: Recovery Assessment <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ════ STEP 4: Recovery Assessment ════ -->
+        <div class="eco-form-step d-none" id="step4">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-diagram-3 me-2 text-success"></i>Step 4: Recovery Assessment</h4>
+            </div>
+            <div class="eco-card-body">
+              <div id="recoveryLoading" class="text-center py-5">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-3 text-muted">Evaluating recovery route…</p>
+              </div>
+
+              <div id="recoveryResult" class="d-none">
+                <!-- Route banner -->
+                <div class="eco-recovery-banner mb-4" id="routeBanner">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="eco-recovery-icon" id="routeIcon"></div>
+                    <div>
+                      <div class="small text-muted mb-1">Suggested Recovery Route</div>
+                      <h4 class="mb-0" id="routeTitle"></h4>
+                    </div>
+                    <div class="ms-auto text-end d-none d-md-block" id="scoreSection">
+                      <div class="small text-muted">Rule-Based Suitability Score</div>
+                      <div class="eco-score" id="scoreDisplay"></div>
+                      <div class="x-small text-muted">Not a probability of sale or repair success</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Safety/manual review alert -->
+                <div id="safetyBanner" class="alert alert-danger d-none mb-4">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                  <strong>Safety / Manual Review Required</strong>
+                  <p class="mb-0 mt-1 small" id="safetyBannerText"></p>
+                </div>
+
+                <!-- Component-Driven Diagnostic Decision Details -->
+                <div id="componentDecisionCard" class="eco-info-box mb-4 d-none border-primary border-opacity-25 bg-light">
+                  <h6 class="fw-700 mb-2 text-primary">
+                    <i class="bi bi-cpu me-2"></i>Hardware Diagnostic Assessment
+                  </h6>
+                  <p class="small mb-2" id="componentDiagnosticSummary"></p>
+                  <div id="repairTargetsWrap" class="mb-2 d-none">
+                    <span class="badge bg-warning text-dark me-2"><i class="bi bi-wrench me-1"></i>Targeted Repair Modules:</span>
+                    <span id="repairTargetsList" class="small fw-500"></span>
+                  </div>
+                  <div id="salvageablePartsWrap" class="d-none">
+                    <span class="badge bg-success me-2"><i class="bi bi-recycle me-1"></i>Salvageable Working Parts:</span>
+                    <span id="salvageablePartsList" class="small fw-500"></span>
+                  </div>
+                </div>
+
+                <!-- Explanation -->
+                <div class="eco-info-box mb-4">
+                  <h6 class="fw-600 mb-2">Why this recommendation?</h6>
+                  <p class="mb-2" id="routeExplanation"></p>
+                  <div id="reasonCodesWrap" class="d-none">
+                    <div class="small text-muted mb-1">Factors considered:</div>
+                    <div id="reasonCodesList" class="d-flex flex-wrap gap-2"></div>
+                  </div>
+                </div>
+
+                <!-- Missing information -->
+                <div id="missingInfoWrap" class="alert alert-warning d-none mb-4">
+                  <i class="bi bi-exclamation-circle me-2"></i>
+                  <strong>Missing Information:</strong>
+                  <span id="missingInfoList"></span>
+                  <p class="small mb-0 mt-1">The recommendation above is based on available details. Providing the missing information may change the suggested route.</p>
+                </div>
+              </div>
+
+              <div id="recoveryError" class="alert alert-danger d-none">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                Could not generate a recovery assessment. Please check your item details and try again.
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-eco-outline btn-lg" onclick="goToStep(3)">
+              <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+            <button type="button" class="btn btn-eco-primary btn-lg" id="step4Next">
+              Next: EcoImpact <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ════ STEP 5: EcoImpact ════ -->
+        <div class="eco-form-step d-none" id="step5">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-leaf me-2 text-success"></i>Step 5: EcoImpact — Environmental Guidance</h4>
+            </div>
+            <div class="eco-card-body">
+              <div id="ecoLoading" class="text-center py-4">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2 text-muted">Retrieving environmental information…</p>
+              </div>
+
+              <div id="ecoContent" class="d-none">
+                <div id="ecoRouteAdvice" class="eco-info-box eco-info-box--green mb-4">
+                  <i class="bi bi-leaf me-2"></i><span id="ecoRouteAdviceText"></span>
+                </div>
+
+                <div id="ecoImpactsWrap">
+                  <!-- Impacts injected by JS -->
+                </div>
+              </div>
+
+              <div id="ecoUnavailable" class="eco-empty-state d-none">
+                <i class="bi bi-journal-x eco-empty-icon text-muted"></i>
+                <h5>No Verified Information Available</h5>
+                <p class="text-muted" id="ecoUnavailableMsg"></p>
+                <p class="small text-muted">
+                  For guidance on responsible e-waste disposal, contact your local authority or a certified e-waste collection service.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-eco-outline btn-lg" onclick="goToStep(4)">
+              <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+            <button type="button" class="btn btn-eco-primary btn-lg" onclick="goToStep(6)">
+              Review &amp; Publish <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ════ STEP 6: Review & Publish ════ -->
+        <div class="eco-form-step d-none" id="step6">
+          <div class="eco-card">
+            <div class="eco-card-header">
+              <h4 class="mb-0"><i class="bi bi-check2-circle me-2 text-success"></i>Step 6: Review &amp; Publish</h4>
+            </div>
+            <div class="eco-card-body">
+              <p class="text-muted mb-4">Please review your listing details before publishing.</p>
+
+              <div class="row g-4">
+                <div class="col-md-4">
+                  <div id="reviewImageWrap">
+                    <img id="reviewImage" src="" alt="Item" class="img-fluid rounded eco-review-img d-none">
+                    <div id="reviewImagePlaceholder" class="eco-listing-img-placeholder">
+                      <i class="bi bi-device-hdd"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-8">
+                  <table class="table eco-review-table">
+                    <tr><th>Title</th><td id="reviewTitle">—</td></tr>
+                    <tr><th>Category</th><td id="reviewCategory">—</td></tr>
+                    <tr><th>Working Status</th><td id="reviewWorking">—</td></tr>
+                    <tr><th>Condition</th><td id="reviewCondition">—</td></tr>
+                    <tr><th>Detected Components</th><td id="reviewComponents">—</td></tr>
+                    <tr><th>Component Diagnostics</th><td id="reviewDiagnostics">—</td></tr>
+                    <tr><th>Defects</th><td id="reviewDefects">—</td></tr>
+                    <tr><th>Asking Price</th><td id="reviewPrice">—</td></tr>
+                    <tr><th>Recovery Route</th><td id="reviewRoute">—</td></tr>
+                  </table>
+                </div>
+              </div>
+
+              <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Note:</strong> Listings with safety flags or missing details will be placed in
+                <strong>Pending Review</strong> rather than published immediately.
+                This is a college prototype — all transactions are simulated.
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-eco-outline btn-lg" onclick="goToStep(5)">
+              <i class="bi bi-arrow-left me-2"></i>Back
+            </button>
+            <button type="submit" class="btn btn-eco-primary btn-lg" id="publishBtn">
+              <i class="bi bi-cloud-upload me-2"></i>Publish Listing
+            </button>
+          </div>
+        </div>
+
+      </form><!-- /listingForm -->
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Jinja → JS ──────────────────────────────────────────────────────────────
+const CLASSIFIER_AVAILABLE = {{ 'true' if classifier_available else 'false' }};
+const CLASSIFY_URL         = "{{ url_for('listings.classify_image') }}";
+const CSRF_TOKEN           = "{{ csrf_token() }}";
+const ECO_BASE_URL         = "{{ url_for('api.get_ecoimpact_api', listing_id=0) }}".replace('/0/', '/');
+</script>
+<script src="{{ url_for('static', filename='js/create_listing.js') }}"></script>
+{% endblock %}

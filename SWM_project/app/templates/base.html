@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EcoLoop — Give Electronics a Better Next Life{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}EcoLoop helps you find the best next route for unwanted electronics — reuse, repair, recover or recycle responsibly.{% endblock %}">
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- EcoLoop CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════ Navigation ═══════════ -->
+<nav class="navbar navbar-expand-lg navbar-light eco-nav sticky-top" id="mainNav">
+  <div class="container">
+    <!-- Logo -->
+    <a class="navbar-brand eco-logo" href="{{ url_for('main.index') }}">
+      <span class="eco-logo-icon">
+        <svg width="34" height="34" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="14.5" stroke="#059669" stroke-width="2.5" fill="none"/>
+          <path d="M10 16 Q10 8 18 10 Q26 12 22 20 Q18 28 10 24" stroke="#059669" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M22 10 L19 13 L23 14 Z" fill="#059669"/>
+          <circle cx="16" cy="16" r="3.5" fill="#10b981"/>
+        </svg>
+      </span>
+      <span class="eco-logo-text">Eco<span class="eco-logo-accent">Loop</span></span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('main') %}active{% endif %}"
+             href="{{ url_for('main.index') }}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('marketplace') %}active{% endif %}"
+             href="{{ url_for('marketplace.index') }}">Marketplace</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('ecoimpact') %}active{% endif %}"
+             href="{{ url_for('ecoimpact.index') }}">
+            <i class="bi bi-leaf me-1"></i>EcoImpact
+          </a>
+        </li>
+        {% if current_user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'listings.new_listing' %}active{% endif %}"
+             href="{{ url_for('listings.new_listing') }}">
+            <i class="bi bi-plus-circle me-1"></i>List an Item
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and 'my_listings' in request.endpoint %}active{% endif %}"
+             href="{{ url_for('listings.my_listings') }}">My Listings</a>
+        </li>
+        {% if current_user.is_admin() %}
+        <li class="nav-item">
+          <a class="nav-link text-warning {% if request.endpoint and request.endpoint.startswith('admin') %}active{% endif %}"
+             href="{{ url_for('admin.dashboard') }}">
+            <i class="bi bi-shield-check me-1"></i>Admin
+          </a>
+        </li>
+        {% endif %}
+        {% endif %}
+      </ul>
+
+      <ul class="navbar-nav ms-auto">
+        {% if current_user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#"
+             id="userMenu" role="button" data-bs-toggle="dropdown">
+            <span class="eco-avatar">{{ current_user.name[0].upper() }}</span>
+            <span class="d-none d-md-inline">{{ current_user.name.split()[0] }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end eco-dropdown">
+            <li><div class="dropdown-header">
+              <div class="fw-600">{{ current_user.name }}</div>
+              <div class="small text-muted">{{ current_user.role.replace('_',' ').title() }}</div>
+            </div></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('listings.dashboard') }}">
+              <i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('profile.view') }}">
+              <i class="bi bi-person me-2"></i>Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+              <i class="bi bi-box-arrow-right me-2"></i>Log Out</a></li>
+          </ul>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('auth.login') }}">Log In</a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-eco-primary btn-sm ms-2" href="{{ url_for('auth.register') }}">
+            Get Started
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ Flash Messages ═══════════ -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="container mt-3" id="flash-container">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show eco-alert" role="alert">
+    <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' or category == 'error' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ═══════════ Main Content ═══════════ -->
+<main id="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ═══════════ Footer ═══════════ -->
+<footer class="eco-footer mt-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="eco-footer-brand mb-3">
+          <span class="eco-logo-text fs-5">Eco<span class="eco-logo-accent">Loop</span></span>
+        </div>
+        <p class="text-muted small">
+          Give Electronics a Better Next Life. EcoLoop helps you responsibly reuse,
+          repair or recycle unwanted electronic items.
+        </p>
+        <p class="small text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          <strong>Disclaimer:</strong> EcoLoop is a college prototype. Environmental
+          information is for educational purposes. Hazardous items require qualified
+          specialist handling.
+        </p>
+      </div>
+      <div class="col-lg-2 col-6">
+        <h6 class="fw-600 mb-3">Platform</h6>
+        <ul class="list-unstyled small">
+          <li><a href="{{ url_for('main.index') }}" class="eco-footer-link">Home</a></li>
+          <li><a href="{{ url_for('marketplace.index') }}" class="eco-footer-link">Marketplace</a></li>
+          <li><a href="{{ url_for('ecoimpact.index') }}" class="eco-footer-link">EcoImpact</a></li>
+        </ul>
+      </div>
+      <div class="col-lg-2 col-6">
+        <h6 class="fw-600 mb-3">Account</h6>
+        <ul class="list-unstyled small">
+          {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('listings.new_listing') }}" class="eco-footer-link">List an Item</a></li>
+          <li><a href="{{ url_for('listings.my_listings') }}" class="eco-footer-link">My Listings</a></li>
+          <li><a href="{{ url_for('profile.view') }}" class="eco-footer-link">Profile</a></li>
+          {% else %}
+          <li><a href="{{ url_for('auth.register') }}" class="eco-footer-link">Register</a></li>
+          <li><a href="{{ url_for('auth.login') }}" class="eco-footer-link">Log In</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div class="col-lg-4">
+        <h6 class="fw-600 mb-3">Responsible Disposal</h6>
+        <p class="small text-muted">
+          Never place electronic equipment in general household waste.
+          Contact your local authority or a certified e-waste collection service
+          for responsible disposal guidance.
+        </p>
+        <p class="small text-muted mb-0">
+          © {{ 2026 }} EcoLoop — College Prototype.
+          Not a live recycling or payment platform.
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- EcoLoop JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

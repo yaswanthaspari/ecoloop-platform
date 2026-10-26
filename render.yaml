@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ecoloop
+    env: python
+    buildCommand: "pip install -r SWM_project/requirements.txt && python seed.py"
+    startCommand: "python run.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
